@@ -75,7 +75,7 @@ def getNLastStationsFromUser(userID, maxStations = 3):
 
      #   todo - just return list of recent stations for now
     if (len(stationSet) > maxStations):
-        return stationSet[0:maxStations]
+        return stationSet.keys()[0:maxStations]
     else:
         return stationSet
 
