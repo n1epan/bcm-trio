@@ -11,7 +11,7 @@ def main(argv):
     else:
         user = argv[0]
 
-    print getNLastStationsFromUser(user)
+    print getNLastStationsFromUser(user, 3)
 
 
 

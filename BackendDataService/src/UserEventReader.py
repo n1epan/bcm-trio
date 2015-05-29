@@ -51,31 +51,61 @@ def getEventsFromUser(userID, maxNumEvents = 1000):
     session.shutdown()
     return result
 
-def getNLastStationsFromUser(userID, maxStations = 3):
+def getNLastStationsFromUser(userID, maxStations = 3, maxAlbums = 4, maxArtists = 4):
     result = getEventsFromUser(userID)
 
-    stationSet = OrderedDict()
+    stationSet = []
 
+    # Output will be a list of dicts. Each dict entry will have as keys:
+    # name: Station name
+    # lastPlayedAlbums - list of most recently played albums, in reverse chronological order
+    # lastPlayedArtists - list of most recently played artists, in reverse chronological order
+    # todo - figure out of there needs to be a 1-1 correspondence between last played albums and artists
+
+    stationsSeenSoFar = []
     for record in result:
         if (_USE_MATCHED_DATABASE):
             station = "Dummy station" # todo - current matched DB doesn't log station/source name
             albumName = "Dummy album"
+            artistName = "Taylor Swift"
         else:
             station = record.track['sourceName']
             albumName = record.track['album']
+            artistName = record.track['artist']
             # print station
 
         if station != '':
             # If we've seen this station before, attempt to add album to history for this station
-            # Otherwise, add station to map
-            albumSet = stationSet.get(station, OrderedDict())
-            if albumName != '':
-               albumSet[albumName] = albumSet.get(albumName,0)+1
-            stationSet[station] = albumSet
+            # Otherwise, add station to list
+            if station in stationsSeenSoFar:
+                stationIdx = stationsSeenSoFar.index(station)
+            else:
+                entry = dict()
+                entry['name'] = station
+                entry['lastPlayedAlbums'] = []
+                entry['lastPlayedArtists'] = []
 
-     #   todo - just return list of recent stations for now
-    if (len(stationSet) > maxStations):
-        return stationSet.keys()[0:maxStations]
-    else:
-        return stationSet
+                # update master station list with new entry
+                stationIdx = 0
+                stationSet.insert(0,entry)
+                stationSet = stationSet[0:maxStations]
+                # update shadow set of stations seen so far
+                stationsSeenSoFar.insert(0,station)
+                stationsSeenSoFar = stationsSeenSoFar[0:maxStations]
+            # put new station at start of station list
+            stationEntry = stationSet[stationIdx]
+            # now check if this album and artists among the last played
+            if albumName != '':
+                if albumName not in stationEntry['lastPlayedAlbums'] and len(stationEntry['lastPlayedAlbums']) < maxAlbums:
+                    stationEntry['lastPlayedAlbums'].insert(0,albumName)
+                    stationEntry['lastPlayedAlbums'] = stationEntry['lastPlayedAlbums'][0:maxAlbums]
+
+            if artistName != '':
+                if artistName not in stationEntry['lastPlayedArtists'] and len(stationEntry['lastPlayedArtists']) < maxArtists:
+                    stationEntry['lastPlayedArtists'].insert(0,artistName)
+                    stationEntry['lastPlayedAlbums'] = stationEntry['lastPlayedAlbums'][0:maxArtists]
+
+            # store back
+            stationSet[stationIdx] = stationEntry
+    return stationSet
 
